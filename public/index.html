@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribbleCraft - Live Guessing & Drawing</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Nunito for playful design -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #e0f2fe;
+        }
+        .canvas-container {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <!-- Screen Wrapper -->
+    <div id="app" class="flex-grow flex flex-col max-w-7xl mx-auto w-full p-4 h-full">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center bg-white p-3 rounded-2xl shadow-md mb-3 border-b-4 border-sky-300">
+            <h1 class="text-2xl font-black text-sky-600 tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-palette text-amber-500"></i> ScribbleCraft
+            </h1>
+            <div id="room-info" class="hidden flex items-center gap-4 bg-sky-50 px-4 py-1.5 rounded-full border border-sky-200">
+                <span class="font-bold text-sky-800">Room: <span id="info-room-code" class="text-amber-600 tracking-wider">------</span></span>
+                <span class="text-sky-300">|</span>
+                <span class="font-bold text-sky-800" id="info-rounds">Round: -/-</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace (Dynamic Screens) -->
+        <main class="flex-grow flex flex-col justify-center items-center relative overflow-hidden">
+            
+            <!-- 1. Menu Screen -->
+            <div id="screen-menu" class="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl border-4 border-sky-100 flex flex-col gap-6 scale-95 transition-all">
+                <div class="text-center">
+                    <span class="text-5xl">ðŸŽ¨</span>
+                    <h2 class="text-3xl font-black text-slate-800 mt-2">Doodle & Guess!</h2>
+                    <p class="text-slate-500 text-sm">Create private drawing rooms with friends.</p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <label class="font-bold text-slate-700">Your Nickname</label>
+                    <input type="text" id="input-nickname" placeholder="DoodleMaster" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-sky-500 font-bold text-slate-700">
+                </div>
+
+                <div class="flex flex-col gap-3 mt-2">
+                    <button id="btn-create-lobby" class="w-full py-4 bg-gradient-to-r from-sky-400 to-sky-500 text-white font-black text-lg rounded-xl shadow-md border-b-4 border-sky-600 hover:brightness-105 transition-all">
+                        Create Room
+                    </button>
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-slate-200"></div>
+                        <span class="flex-shrink mx-4 text-slate-400 font-bold text-sm">OR</span>
+                        <div class="flex-grow border-t border-slate-200"></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-join-code" placeholder="ROOM CODE" class="w-1/2 text-center uppercase border-2 border-slate-200 rounded-xl font-black text-slate-700 tracking-widest focus:outline-none focus:border-amber-500">
+                        <button id="btn-join-lobby" class="w-1/2 py-3 bg-amber-400 text-white font-black text-lg rounded-xl shadow-md border-b-4 border-amber-600 hover:brightness-105 transition-all">
+                            Join Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Lobby / Options Customization Screen -->
+            <div id="screen-lobby" class="hidden w-full max-w-4xl bg-white p-6 rounded-3xl shadow-xl border-4 border-sky-100 flex flex-col md:flex-row gap-6 h-full max-h-[550px]">
+                <!-- Settings Panel -->
+                <div class="w-full md:w-1/2 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-6">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-sky-500"></i> Room Configuration
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 block mb-1">Rounds</label>
+                                <select id="select-rounds" class="lobby-setting w-full px-3 py-2 border rounded-xl font-bold text-slate-700 bg-slate-50">
+                                    <option value="2">2 Rounds</option>
+                                    <option value="3" selected>3 Rounds</option>
+                                    <option value="5">5 Rounds</option>
+                                    <option value="10">10 Rounds</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 block mb-1">Draw Time</label>
+                                <select id="select-time" class="lobby-setting w-full px-3 py-2 border rounded-xl font-bold text-slate-700 bg-slate-50">
+                                    <option value="30">30 Seconds</option>
+                                    <option value="45">45 Seconds</option>
+                                    <option value="60" selected>60 Seconds</option>
+                                    <option value="90">90 Seconds</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 block mb-1">Max Players</label>
+                                <select id="select-max" class="lobby-setting w-full px-3 py-2 border rounded-xl font-bold text-slate-700 bg-slate-50">
+                                    <option value="4">4 Players</option>
+                                    <option value="8" selected>8 Players</option>
+                                    <option value="12">12 Players</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 block mb-1">Difficulty</label>
+                                <select id="select-difficulty" class="lobby-setting w-full px-3 py-2 border rounded-xl font-bold text-slate-700 bg-slate-50">
+                                    <option value="easy" selected>Easy Pack</option>
+                                    <option value="medium">Medium Pack</option>
+                                    <option value="hard">Hard Pack</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button id="btn-start-game" class="hidden w-full py-4 bg-emerald-500 text-white font-black text-xl rounded-2xl shadow-md border-b-4 border-emerald-700 hover:brightness-105 transition-all">
+                            Start Game!
+                        </button>
+                        <p id="lobby-host-msg" class="text-sm text-slate-400 font-semibold text-center mt-2 italic">Waiting for host to start...</p>
+                    </div>
+                </div>
+
+                <!-- Joined Players List -->
+                <div class="w-full md:w-1/2 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-slate-800 mb-4 flex items-center justify-between">
+                            <span><i class="fa-solid fa-users text-amber-500"></i> Players</span>
+                            <span id="player-count" class="text-sm bg-sky-100 text-sky-700 px-3 py-0.5 rounded-full font-bold">0</span>
+                        </h3>
+                        <div id="lobby-players" class="flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-2">
+                            <!-- Players injected dynamically -->
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 mt-4">
+                        <span class="text-xs font-black text-amber-800 uppercase block tracking-wider">How to play</span>
+                        <p class="text-xs text-amber-700 leading-relaxed mt-0.5">One person draws a random word, and everyone else guesses. First to guess correctly scores the highest points! Make sure your sound is on!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Word Selection Overlaid Banner (During choosing turn) -->
+            <div id="banner-word-selection" class="hidden absolute inset-0 bg-slate-900/80 z-40 flex items-center justify-center p-4">
+                <div class="bg-white p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border-4 border-amber-300">
+                    <span id="selecting-title-icon" class="text-4xl">ðŸ¤”</span>
+                    <h3 id="selecting-player-text" class="text-2xl font-black text-slate-800 my-2">Player is choosing</h3>
+                    <p class="text-slate-500 text-sm mb-6">Waiting for selection of the next turn word...</p>
+                    <div id="word-options-container" class="hidden flex flex-col gap-3">
+                        <!-- Custom Select Options for Drawer -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Game Interface Screen -->
+            <div id="screen-game" class="hidden w-full flex-grow flex flex-col lg:flex-row gap-4 h-full relative">
+                
+                <!-- Left: Leaderboard / Players Status Panel -->
+                <div class="w-full lg:w-1/5 bg-white rounded-3xl p-4 shadow-lg border border-slate-100 flex flex-col h-[150px] lg:h-auto">
+                    <h3 class="text-lg font-black text-slate-800 mb-2 border-b pb-2 hidden lg:block"><i class="fa-solid fa-ranking-star text-amber-500"></i> Standing</h3>
+                    <div id="game-scoreboard" class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto flex-grow pr-1">
+                        <!-- Game Scorecards injected here -->
+                    </div>
+                </div>
+
+                <!-- Middle: Draw Board Space -->
+                <div class="flex-grow bg-white rounded-3xl shadow-lg border-2 border-slate-150 p-3 flex flex-col h-[350px] lg:h-auto min-h-[300px]">
+                    <!-- Word & Time Header -->
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b">
+                        <div class="flex items-center gap-3">
+                            <span id="game-timer" class="text-xl font-black bg-amber-500 text-white rounded-full h-11 w-11 flex items-center justify-center border-b-4 border-amber-700">60</span>
+                            <div>
+                                <span class="text-xs font-bold text-slate-400 block leading-tight">GUESS THE WORD:</span>
+                                <span id="hint-word" class="text-xl font-black tracking-[0.3em] text-slate-800 uppercase">_ _ _ _ _</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-bold text-slate-400 block leading-tight">CURRENT DRAWER:</span>
+                            <span id="game-current-drawer" class="text-md font-black text-sky-600">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas -->
+                    <div class="flex-grow bg-slate-50 rounded-2xl border-2 border-slate-100 overflow-hidden relative canvas-container">
+                        <canvas id="paint-canvas" class="w-full h-full block bg-white cursor-crosshair"></canvas>
+                    </div>
+
+                    <!-- Toolkit Controller (Hidden for non-drawers) -->
+                    <div id="drawing-tools" class="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t">
+                        <!-- Color Palette Tools -->
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #000000;" data-color="#000000"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #ef4444;" data-color="#ef4444"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #f97316;" data-color="#f97316"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #eab308;" data-color="#eab308"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #22c55e;" data-color="#22c55e"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #06b6d4;" data-color="#06b6d4"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #3b82f6;" data-color="#3b82f6"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #a855f7;" data-color="#a855f7"></button>
+                            <button class="color-btn w-7 h-7 rounded-full border-2 border-white shadow-md active:scale-90 transition-transform" style="background-color: #ec4899;" data-color="#ec4899"></button>
+                        </div>
+
+                        <!-- Size Tools & Utilities -->
+                        <div class="flex items-center gap-2">
+                            <select id="select-brush-size" class="px-2 py-1.5 border rounded-lg text-sm font-bold text-slate-600 bg-slate-50 focus:outline-none">
+                                <option value="2">XS (2px)</option>
+                                <option value="5" selected>S (5px)</option>
+                                <option value="10">M (10px)</option>
+                                <option value="18">L (18px)</option>
+                                <option value="30">XL (30px)</option>
+                            </select>
+
+                            <button id="btn-eraser" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border text-slate-600 rounded-lg text-sm font-bold active:scale-95 transition-all">
+                                <i class="fa-solid fa-eraser"></i> Eraser
+                            </button>
+
+                            <button id="btn-clear" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-lg text-sm font-bold active:scale-95 transition-all">
+                                <i class="fa-solid fa-trash-can"></i> Reset Canvas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Active Game Chat Stream -->
+                <div class="w-full lg:w-1/4 bg-white rounded-3xl shadow-lg border border-slate-100 p-4 flex flex-col h-[200px] lg:h-auto">
+                    <h3 class="text-md font-black text-slate-800 mb-2 border-b pb-2 hidden lg:block"><i class="fa-solid fa-comment-dots text-sky-500"></i> Guessing Log</h3>
+                    
+                    <div id="game-chat" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-1 text-sm">
+                        <!-- Dynamic conversation entries in here -->
+                    </div>
+
+                    <form id="chat-form" class="flex gap-2">
+                        <input type="text" id="chat-input" placeholder="Type a guess here..." class="flex-grow px-3 py-2 border-2 border-slate-200 focus:outline-none focus:border-sky-500 font-semibold rounded-xl" autocomplete="off">
+                        <button type="submit" class="bg-sky-500 text-white font-bold px-4 py-2 rounded-xl hover:brightness-105 active:scale-95 transition-all">
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 5. End Leaderboard Screen -->
+            <div id="screen-end" class="hidden w-full max-w-lg bg-white p-8 rounded-3xl shadow-xl border-4 border-amber-300 flex flex-col items-center gap-6">
+                <div class="text-center">
+                    <span class="text-5xl">ðŸ†</span>
+                    <h2 class="text-3xl font-black text-slate-800 mt-2">Final Standings</h2>
+                    <p class="text-emerald-600 font-extrabold text-lg mt-1" id="winner-tag">Champion: ---</p>
+                </div>
+
+                <div id="final-leaderboard-list" class="w-full flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+                    <!-- Dynamic ranked elements -->
+                </div>
+
+                <button id="btn-return-lobby" class="w-full mt-2 py-4 bg-sky-500 text-white font-black text-lg rounded-xl shadow-md border-b-4 border-sky-700 hover:brightness-105 transition-all">
+                    Return to Menu
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Import Socket.io CDN -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const socket = io(window.location.origin, {
+    transports: ['websocket', 'polling']
+});
+
+        // Screen States definitions
+        const screens = {
+            menu: document.getElementById('screen-menu'),
+            lobby: document.getElementById('screen-lobby'),
+            game: document.getElementById('screen-game'),
+            end: document.getElementById('screen-end'),
+            wordBanner: document.getElementById('banner-word-selection')
+        };
+
+        // DOM elements cache
+        const inputNickname = document.getElementById('input-nickname');
+        const inputJoinCode = document.getElementById('input-join-code');
+        const btnCreateLobby = document.getElementById('btn-create-lobby');
+        const btnJoinLobby = document.getElementById('btn-join-lobby');
+        const infoRoomCode = document.getElementById('info-room-code');
+        const infoRounds = document.getElementById('info-rounds');
+        const roomInfoBar = document.getElementById('room-info');
+        
+        // Lobby UI State elements
+        const selectRounds = document.getElementById('select-rounds');
+        const selectTime = document.getElementById('select-time');
+        const selectMax = document.getElementById('select-max');
+        const selectDifficulty = document.getElementById('select-difficulty');
+        const btnStartGame = document.getElementById('btn-start-game');
+        const lobbyHostMsg = document.getElementById('lobby-host-msg');
+   
