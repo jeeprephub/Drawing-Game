@@ -265,7 +265,8 @@
 
     <script>
         const socket = io(window.location.origin, {
-    transports: ['websocket', 'polling']
+    transports: ['websocket', 'polling'],
+    reconnection: true
 });
 
         // Screen States definitions
