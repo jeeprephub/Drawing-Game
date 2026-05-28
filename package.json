@@ -1,0 +1,25 @@
+{
+  "name": "drawing-game",
+  "version": "1.0.0",
+  "description": "Online multiplayer drawing and guessing game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "drawing-game",
+    "multiplayer",
+    "socketio",
+    "guess-game"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
